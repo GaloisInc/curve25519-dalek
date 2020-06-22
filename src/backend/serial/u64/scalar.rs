@@ -449,3 +449,111 @@ mod test {
         }
     }
 }
+
+
+#[cfg(crux)]
+mod crux_test {
+    use super::*;
+    extern crate crucible;
+    use self::crucible::*;
+    use self::crucible::bitvector::{self, Bv256};
+
+
+    fn bv_to_bytes(bv: Bv256) -> [u8; 32] {
+        let mut bytes = [0; 32];
+        for i in 0 .. 32 {
+            bytes[i] = (bv >> (i * 8)).into();
+        }
+        bytes
+    }
+
+    fn bv_from_bytes(bytes: [u8; 32]) -> Bv256 {
+        let mut bv = Bv256::from(0);
+        for i in 0 .. 32 {
+            bv = bv | Bv256::from(bytes[i]) << (i * 8);
+        }
+        bv
+    }
+
+    #[crux_test]
+    fn bv_to_from_bytes() {
+        let bv = Bv256::symbolic("bv");
+        crucible_assert!(bv_from_bytes(bv_to_bytes(bv)) == bv);
+    }
+
+    #[crux_test]
+    fn bv_from_to_bytes() {
+        let bytes = <[u8; 32]>::symbolic("bytes");
+        crucible_assert!(bv_to_bytes(bv_from_bytes(bytes)) == bytes);
+    }
+
+
+    /// `constants::L` in `Bv256` form.  This is used to constrain some later tests.
+    fn bv_L() -> Bv256 {
+        (Bv256::from(1) << 252) |
+            (Bv256::from(0x14def9dea2f79cd6_u64) << 64) |
+            Bv256::from(0x5812631a5cf5d3ed_u64)
+    }
+
+    #[crux_test]
+    fn bv_L_correct() {
+        assert!(bv_to_scalar(bv_L()).0 == constants::L.0);
+    }
+
+
+    fn bv_to_scalar(bv: Bv256) -> Scalar52 {
+        Scalar52::from_bytes(&bv_to_bytes(bv))
+    }
+
+    fn bv_from_scalar(s: Scalar52) -> Bv256 {
+        bv_from_bytes(s.to_bytes())
+    }
+
+    #[crux_test]
+    fn bv_to_from_scalar() {
+        let bv = Bv256::symbolic_where("bv", |&bv| bv < bv_L());
+        crucible_assert!(bv_from_scalar(bv_to_scalar(bv)) == bv);
+    }
+
+    fn symbolic_scalar(desc: &'static str) -> Scalar52 {
+        let bv = Bv256::symbolic_where(desc, |&bv| bv < bv_L());
+        bv_to_scalar(bv)
+    }
+
+
+    #[crux_test]
+    fn add_correct() {
+        let a_bv = Bv256::symbolic_where("a", |bv| bv < &bv_L());
+        let b_bv = Bv256::symbolic_where("b", |bv| bv < &bv_L());
+        let a = bv_to_scalar(a_bv);
+        let b = bv_to_scalar(b_bv);
+        let c = Scalar52::add(&a, &b);
+        let c_bv = bv_from_scalar(c);
+
+        let mut expected_c_bv = a_bv + b_bv;
+        if expected_c_bv >= bv_L() {
+            expected_c_bv = expected_c_bv - bv_L();
+        }
+        crucible_assert!(expected_c_bv < bv_L());
+
+        crucible_assert!(c_bv == expected_c_bv);
+    }
+
+    #[crux_test]
+    fn sub_correct() {
+        let a_bv = Bv256::symbolic_where("a", |bv| bv < &bv_L());
+        let b_bv = Bv256::symbolic_where("b", |bv| bv < &bv_L());
+        let a = bv_to_scalar(a_bv);
+        let b = bv_to_scalar(b_bv);
+        let c = Scalar52::sub(&a, &b);
+        let c_bv = bv_from_scalar(c);
+
+        let mut expected_c_bv = bv_L() + a_bv - b_bv;
+        if expected_c_bv >= bv_L() {
+            expected_c_bv = expected_c_bv - bv_L();
+        }
+        crucible_assert!(expected_c_bv < bv_L());
+
+        crucible_assert!(c_bv == expected_c_bv);
+    }
+}
