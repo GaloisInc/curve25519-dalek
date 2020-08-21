@@ -504,6 +504,7 @@ mod crux_test {
     use self::crucible::*;
     use self::crucible::bitvector::{self, Bv256};
 
+    /// Create a symbolic `Scalar52` value.
     fn symbolic_scalar(desc: &'static str) -> Scalar52 {
         let mut y = Scalar52(<[u64; 5]>::symbolic(desc));
         for i in 0 .. 4 {
@@ -512,14 +513,9 @@ mod crux_test {
         crucible_assume!(y[4] < 1_u64 << (256 - 4 * 52));
         crucible_assume!(scalar_to_bv256(y) < scalar_to_bv256(constants::L));
         y
-        /*
-        let bytes = <[u8; 32]>::symbolic(desc);
-        let x = BigUint::from_bytes_le(&bytes);
-        let l_big = scalar_to_biguint(constants::L);
-        crucible_assume!(x < l_big);
-        biguint_to_scalar(x)
-        */
     }
+
+    // Conversion functions for `Bv256` and `Scalar52`.
 
     fn scalar_to_biguint(x: Scalar52) -> BigUint {
         BigUint::from_bytes_le(&x.to_bytes())
@@ -566,18 +562,8 @@ mod crux_test {
         y
     }
 
-    #[crux_test]
-    fn dummy() {
-        let a = Scalar52([5, 4, 3, 2, 1 << 51]);
-        let a_big = scalar_to_bv256(a);
-        let l_big = scalar_to_bv256(constants::L);
-        let a_bytes = bv256_to_bytes(a_big);
-        let l_bytes = bv256_to_bytes(l_big);
-        crucible_assert!(a_big < l_big);
-        crucible_assert!(false,
-            "\na = {:?}\nl = {:?}", a_bytes, l_bytes);
-    }
-
+    // Tests to establish the correctness of conversions between Bv256 and Scalar52.  We rely on
+    // the conversion functions in the main `add_correct_symbolic` test.
     #[crux_test]
     fn scalar_to_bv256_correct() {
         let a = symbolic_scalar("a");
@@ -608,6 +594,8 @@ mod crux_test {
         crucible_assert!(a.0 == a2.0, "{:?} != {:?}", a, a2);
     }
 
+    /// Test correctness of `Scalar52::add`, by comparison to `crux-mir`'s built-in 256-bit integer
+    /// arithmetic.
     #[crux_test]
     fn add_correct_symbolic() {
         let a = symbolic_scalar("a");
