@@ -9,11 +9,11 @@ demo video][video].
 [video]: https://www.youtube.com/watch?v=dCNQFHjgotU
 
 The concrete and symbolic `add_correct` tests appear near the bottom of
-[`u64/scalar.rs`][scalar].  To run the test, first [set up `crux-mir`][setup],
-then run:
+[`u64/scalar.rs`][scalar].  To run the symbolic tests, first [set up
+`crux-mir`][setup], then run:
 
 ```
-cargo crux-test add_correct -- -s z3
+cargo crux-test -- -s z3
 ```
 
 This will run the symbolic `add_correct` test using the Z3 solver backend.

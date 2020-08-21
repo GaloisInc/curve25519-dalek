@@ -450,6 +450,7 @@ mod test {
     }
 }
 
+#[cfg(test)]
 mod test_extra {
     use super::*;
     use std::convert::TryFrom;
@@ -606,6 +607,23 @@ mod crux_test {
         let b_bv: Bv256 = scalar_to_bv256(b);
         let l_bv: Bv256 = scalar_to_bv256(constants::L);
         let sum_bv = (a_bv + b_bv) % l_bv;
+
+        assert!(sum.0 == bv256_to_scalar(sum_bv).0);
+    }
+
+    /// Test correctness of `Scalar52::sub`, by comparison to `crux-mir`'s built-in 256-bit integer
+    /// arithmetic.
+    #[crux_test]
+    fn sub_correct_symbolic() {
+        let a = symbolic_scalar("a");
+        let b = symbolic_scalar("b");
+        let sum = Scalar52::sub(&a, &b);
+
+        let a_bv: Bv256 = scalar_to_bv256(a);
+        let b_bv: Bv256 = scalar_to_bv256(b);
+        let l_bv: Bv256 = scalar_to_bv256(constants::L);
+        // Add an extra offset of `L` to avoid underflow.
+        let sum_bv = (a_bv + l_bv - b_bv) % l_bv;
 
         assert!(sum.0 == bv256_to_scalar(sum_bv).0);
     }
