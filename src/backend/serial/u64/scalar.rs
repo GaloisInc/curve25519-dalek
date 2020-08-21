@@ -450,16 +450,91 @@ mod test {
     }
 }
 
+mod test_extra {
+    use super::*;
+    use std::convert::TryFrom;
+    use num_bigint::BigUint;
+
+    fn scalar_from_hex_str(s: &str) -> Scalar52 {
+        let x = BigUint::parse_bytes(s.as_bytes(), 16).unwrap();
+        biguint_to_scalar(x)
+    }
+
+    fn scalar_to_biguint(x: Scalar52) -> BigUint {
+        BigUint::from_bytes_le(&x.to_bytes())
+    }
+
+    fn biguint_to_scalar(x: BigUint) -> Scalar52 {
+        let mut bytes = x.to_bytes_le();
+        assert!(bytes.len() <= 32);
+        bytes.resize(32, 0);
+        let bytes = <&[u8; 32]>::try_from(&bytes as &[_]).unwrap();
+        Scalar52::from_bytes(bytes)
+    }
+
+    #[test]
+    fn add_correct_concrete() {
+        let a = scalar_from_hex_str(
+            "0123456789abcdef0123456789abcdef\
+             0123456789abcdef0123456789abcdef",
+        );
+        let b = scalar_from_hex_str(
+            "08765432123456789876543212345678\
+             98765432123456789876543212345678",
+        );
+        let sum = Scalar52::add(&a, &b);
+
+        let a_big: BigUint = scalar_to_biguint(a);
+        let b_big: BigUint = scalar_to_biguint(b);
+        let l_big: BigUint = scalar_to_biguint(constants::L);
+        let sum_big = (a_big + b_big) % l_big;
+
+        assert!(sum.0 == biguint_to_scalar(sum_big).0);
+    }
+}
+
 
 #[cfg(crux)]
 mod crux_test {
     use super::*;
+    use std::convert::TryFrom;
+    use num_bigint::BigUint;
+
     extern crate crucible;
     use self::crucible::*;
     use self::crucible::bitvector::{self, Bv256};
 
+    fn symbolic_scalar(desc: &'static str) -> Scalar52 {
+        let mut y = Scalar52(<[u64; 5]>::symbolic(desc));
+        for i in 0 .. 4 {
+            crucible_assume!(y[i] < 1_u64 << 52);
+        }
+        crucible_assume!(y[4] < 1_u64 << (256 - 4 * 52));
+        crucible_assume!(scalar_to_bv256(y) < scalar_to_bv256(constants::L));
+        y
+        /*
+        let bytes = <[u8; 32]>::symbolic(desc);
+        let x = BigUint::from_bytes_le(&bytes);
+        let l_big = scalar_to_biguint(constants::L);
+        crucible_assume!(x < l_big);
+        biguint_to_scalar(x)
+        */
+    }
 
-    fn bv_to_bytes(bv: Bv256) -> [u8; 32] {
+    fn scalar_to_biguint(x: Scalar52) -> BigUint {
+        BigUint::from_bytes_le(&x.to_bytes())
+    }
+
+    fn biguint_to_scalar(x: BigUint) -> Scalar52 {
+        let one = BigUint::from_bytes_be(&[1]);
+        let mut bytes = (x | (one << 256_u32)).to_bytes_le();
+        assert!(bytes.len() == 33);
+        bytes.pop();
+        let bytes = <&[u8; 32]>::try_from(&bytes as &[_]).unwrap();
+        Scalar52::from_bytes(bytes)
+    }
+
+    fn bv256_to_bytes(bv: Bv256) -> [u8; 32] {
         let mut bytes = [0; 32];
         for i in 0 .. 32 {
             bytes[i] = (bv >> (i * 8)).into();
@@ -467,7 +542,7 @@ mod crux_test {
         bytes
     }
 
-    fn bv_from_bytes(bytes: [u8; 32]) -> Bv256 {
+    fn bytes_to_bv256(bytes: [u8; 32]) -> Bv256 {
         let mut bv = Bv256::from(0);
         for i in 0 .. 32 {
             bv = bv | Bv256::from(bytes[i]) << (i * 8);
@@ -475,85 +550,75 @@ mod crux_test {
         bv
     }
 
-    #[crux_test]
-    fn bv_to_from_bytes() {
-        let bv = Bv256::symbolic("bv");
-        crucible_assert!(bv_from_bytes(bv_to_bytes(bv)) == bv);
-    }
-
-    #[crux_test]
-    fn bv_from_to_bytes() {
-        let bytes = <[u8; 32]>::symbolic("bytes");
-        crucible_assert!(bv_to_bytes(bv_from_bytes(bytes)) == bytes);
-    }
-
-
-    /// `constants::L` in `Bv256` form.  This is used to constrain some later tests.
-    fn bv_L() -> Bv256 {
-        (Bv256::from(1) << 252) |
-            (Bv256::from(0x14def9dea2f79cd6_u64) << 64) |
-            Bv256::from(0x5812631a5cf5d3ed_u64)
-    }
-
-    #[crux_test]
-    fn bv_L_correct() {
-        assert!(bv_to_scalar(bv_L()).0 == constants::L.0);
-    }
-
-
-    fn bv_to_scalar(bv: Bv256) -> Scalar52 {
-        Scalar52::from_bytes(&bv_to_bytes(bv))
-    }
-
-    fn bv_from_scalar(s: Scalar52) -> Bv256 {
-        bv_from_bytes(s.to_bytes())
-    }
-
-    #[crux_test]
-    fn bv_to_from_scalar() {
-        let bv = Bv256::symbolic_where("bv", |&bv| bv < bv_L());
-        crucible_assert!(bv_from_scalar(bv_to_scalar(bv)) == bv);
-    }
-
-    fn symbolic_scalar(desc: &'static str) -> Scalar52 {
-        let bv = Bv256::symbolic_where(desc, |&bv| bv < bv_L());
-        bv_to_scalar(bv)
-    }
-
-
-    #[crux_test]
-    fn add_correct() {
-        let a_bv = Bv256::symbolic_where("a", |bv| bv < &bv_L());
-        let b_bv = Bv256::symbolic_where("b", |bv| bv < &bv_L());
-        let a = bv_to_scalar(a_bv);
-        let b = bv_to_scalar(b_bv);
-        let c = Scalar52::add(&a, &b);
-        let c_bv = bv_from_scalar(c);
-
-        let mut expected_c_bv = a_bv + b_bv;
-        if expected_c_bv >= bv_L() {
-            expected_c_bv = expected_c_bv - bv_L();
+    fn scalar_to_bv256(x: Scalar52) -> Bv256 {
+        let mut y = Bv256::from(0);
+        for i in 0 .. 5 {
+            y = y | (Bv256::from(x[i]) << (52 * i));
         }
-        crucible_assert!(expected_c_bv < bv_L());
+        y
+    }
 
-        crucible_assert!(c_bv == expected_c_bv);
+    fn bv256_to_scalar(x: Bv256) -> Scalar52 {
+        let mut y = Scalar52([0; 5]);
+        for i in 0 .. 5 {
+            y[i] = ((x >> (52 * i)) & Bv256::from((1_u64 << 52) - 1)).into();
+        }
+        y
     }
 
     #[crux_test]
-    fn sub_correct() {
-        let a_bv = Bv256::symbolic_where("a", |bv| bv < &bv_L());
-        let b_bv = Bv256::symbolic_where("b", |bv| bv < &bv_L());
-        let a = bv_to_scalar(a_bv);
-        let b = bv_to_scalar(b_bv);
-        let c = Scalar52::sub(&a, &b);
-        let c_bv = bv_from_scalar(c);
+    fn dummy() {
+        let a = Scalar52([5, 4, 3, 2, 1 << 51]);
+        let a_big = scalar_to_bv256(a);
+        let l_big = scalar_to_bv256(constants::L);
+        let a_bytes = bv256_to_bytes(a_big);
+        let l_bytes = bv256_to_bytes(l_big);
+        crucible_assert!(a_big < l_big);
+        crucible_assert!(false,
+            "\na = {:?}\nl = {:?}", a_bytes, l_bytes);
+    }
 
-        let mut expected_c_bv = bv_L() + a_bv - b_bv;
-        if expected_c_bv >= bv_L() {
-            expected_c_bv = expected_c_bv - bv_L();
-        }
-        crucible_assert!(expected_c_bv < bv_L());
+    #[crux_test]
+    fn scalar_to_bv256_correct() {
+        let a = symbolic_scalar("a");
+        let direct_bytes = a.to_bytes();
+        let bv256_bytes = bv256_to_bytes(scalar_to_bv256(a));
+        crucible_assert!(direct_bytes == bv256_bytes,
+            "mismatch:\n  {:?}\n  {:?}", direct_bytes, bv256_bytes);
+    }
 
-        crucible_assert!(c_bv == expected_c_bv);
+    #[crux_test]
+    fn bv256_to_scalar_correct() {
+        let b = Bv256::symbolic("b");
+        crucible_assume!(b < scalar_to_bv256(constants::L));
+        let direct = bv256_to_scalar(b);
+        let via_bytes = Scalar52::from_bytes(&bv256_to_bytes(b));
+        crucible_assert!(direct.0 == via_bytes.0,
+            "mismatch:\n  {:?}\n  {:?}", direct, via_bytes);
+    }
+
+    #[crux_test]
+    fn scalar_to_from_bv256() {
+        let a = symbolic_scalar("a");
+        let a_big = scalar_to_bv256(a);
+        crucible_assert!(a_big < scalar_to_bv256(constants::L));
+        crucible_assert!(scalar_to_bv256(constants::L) < (Bv256::from(1) << 253));
+        crucible_assert!(a_big < (Bv256::from(1) << 253));
+        let a2 = bv256_to_scalar(a_big);
+        crucible_assert!(a.0 == a2.0, "{:?} != {:?}", a, a2);
+    }
+
+    #[crux_test]
+    fn add_correct_symbolic() {
+        let a = symbolic_scalar("a");
+        let b = symbolic_scalar("b");
+        let sum = Scalar52::add(&a, &b);
+
+        let a_bv: Bv256 = scalar_to_bv256(a);
+        let b_bv: Bv256 = scalar_to_bv256(b);
+        let l_bv: Bv256 = scalar_to_bv256(constants::L);
+        let sum_bv = (a_bv + b_bv) % l_bv;
+
+        assert!(sum.0 == bv256_to_scalar(sum_bv).0);
     }
 }
