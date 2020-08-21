@@ -34,6 +34,7 @@ sha2 = { version = "0.9", default-features = false }
 bincode = "1"
 criterion = "0.3.0"
 rand = "0.7"
+num-bigint = "0.3"
 
 [[bench]]
 name = "dalek_benchmarks"
