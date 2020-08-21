@@ -5,7 +5,7 @@ symbolic testing with [`crux-mir`][mir-verifier], as shown in the [`crux-mir`
 demo video][video].
 
 [dalek]: https://github.com/dalek-cryptography/curve25519-dalek/
-[mir-verifier]: https://github.com/GaloisInc/mir-verifier/issues
+[mir-verifier]: https://github.com/GaloisInc/mir-verifier
 [video]: https://www.youtube.com/watch?v=dCNQFHjgotU
 
 The concrete and symbolic `add_correct` tests appear near the bottom of
@@ -20,4 +20,4 @@ This will run the symbolic `add_correct` test using the Z3 solver backend.
 Z3 performs much better on this test than the default Yices backend does.
 
 [scalar]: src/backend/serial/u64/scalar.rs
-[setup]: https://github.com/GaloisInc/mir-verifier/issues#preliminaries
+[setup]: https://github.com/GaloisInc/mir-verifier#preliminaries
