@@ -13,7 +13,7 @@ The concrete and symbolic `add_correct` tests appear near the bottom of
 `crux-mir`][setup], then run:
 
 ```
-cargo crux-test -- -s z3
+cargo crux-test --lib -- -s z3
 ```
 
 This will run the symbolic `add_correct` test using the Z3 solver backend.
