@@ -34,7 +34,6 @@ sha2 = { version = "0.9", default-features = false }
 bincode = "1"
 criterion = "0.3.0"
 rand = "0.7"
-num-bigint = "0.3"
 
 [[bench]]
 name = "dalek_benchmarks"
@@ -48,6 +47,7 @@ subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 packed_simd = { version = "0.3", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
+num-bigint = "0.3"
 
 [features]
 nightly = ["subtle/nightly"]
