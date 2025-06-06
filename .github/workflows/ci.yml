@@ -43,19 +43,18 @@ jobs:
         run: |
           wget https://github.com/GaloisInc/crucible/releases/download/crux-v0.10/crux-mir-0.10-ubuntu-22.04-X64.tar.gz
           tar -xvf crux-mir-0.10-ubuntu-22.04-X64.tar.gz
-      - name: Set env
-        run: |
-          echo "$PWD/crux-mir-0.10-ubuntu-22.04-X64/bin" >> $GITHUB_PATH
-          echo "$PWD/mir-json/.cargo" >> $GITHUB_PATH
-          echo "$PWD/mir-json/.rustup" >> $GITHUB_PATH
-          echo "CRUX_RUST_LIBRARY_PATH=$PWD/mir-json/rlibs" >> $GITHUB_ENV
-      - name: Check env
-        run: |
-          echo $GITHUB_ENV
-          echo $GITHUB_PATH
+      # - name: Set env
+      #   run: |
+      #     echo "$PWD/crux-mir-0.10-ubuntu-22.04-X64/bin" >> $GITHUB_PATH
+      #     echo "$PWD/mir-json/.cargo" >> $GITHUB_PATH
+      #     echo "$PWD/mir-json/.rustup" >> $GITHUB_PATH
+      #     echo "CRUX_RUST_LIBRARY_PATH=$PWD/mir-json/rlibs" >> $GITHUB_ENV
+      # - name: Check env
+      #   run: |
+      #     echo $GITHUB_ENV
+      #     echo $GITHUB_PATH
       - name: Get latest mir-json
         run: |
           docker pull ghcr.io/galoisinc/mir-json:2
-          docker run  -u $(id -u):$(id -g) -v $PWD:/work ghcr.io/galoisinc/mir-json:2 -c "cp -r /home/mir-json/ /work mir-json; cp -r /mir-json/rlibs /work/mir-json/rlibs"
-      - name: Prove
-        run: cargo crux-test --lib -- -s z3
+          sudo chown -R 1000:1000 .
+          docker run -v $PWD:/work ghcr.io/galoisinc/mir-json:2 -c "cp /work/crux-mir-0.10-ubuntu-22.04-X64/bin/crux-mir /home/mir-json/.cargo/bin/. ; cargo crux-test --lib -- -s z3"
