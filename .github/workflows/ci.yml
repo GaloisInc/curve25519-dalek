@@ -36,8 +36,8 @@ jobs:
 
   prove:
     name: Run crux tests and proofs
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: rustup default stable
-      - run: wget https://github.com/GaloisInc/crucible/releases/download/crux-v0.10/crux-mir-0.10-ubuntu-22.04-X64.tar.gz
+      - run: docker pull ghcr.io/galoisinc/mir-json:2
+      - run: docker run  -v $PWD:/work -w /work ghcr.io/galoisinc/mir-json:2 cargo crux-test --lib -- -s z3
