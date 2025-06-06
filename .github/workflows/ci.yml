@@ -39,10 +39,6 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: Get latest mir-json
-        run: |
-          docker pull ghcr.io/galoisinc/mir-json:2
-          docker run  -u $(id -u):$(id -g) -v $PWD:/work ghcr.io/galoisinc/mir-json:2 -c "cp -r /home/mir-json/ /work mir-json; cp -r /mir-json/rlibs /work/mir-json/rlibs"
       - name: Get stable crux-mir
         run: |
           wget https://github.com/GaloisInc/crucible/releases/download/crux-v0.10/crux-mir-0.10-ubuntu-22.04-X64.tar.gz
@@ -57,5 +53,9 @@ jobs:
         run: |
           echo $GITHUB_ENV
           echo $GITHUB_PATH
+      - name: Get latest mir-json
+        run: |
+          docker pull ghcr.io/galoisinc/mir-json:2
+          docker run  -u $(id -u):$(id -g) -v $PWD:/work ghcr.io/galoisinc/mir-json:2 -c "cp -r /home/mir-json/ /work mir-json; cp -r /mir-json/rlibs /work/mir-json/rlibs"
       - name: Prove
         run: cargo crux-test --lib -- -s z3
