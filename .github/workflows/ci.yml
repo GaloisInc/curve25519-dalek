@@ -39,6 +39,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - name: Set permissions
+        run: sudo chmod -R 1000:1000 .
       - name: Get latest mir-json
         run: |
           docker pull ghcr.io/galoisinc/mir-json:2
