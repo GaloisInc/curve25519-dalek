@@ -39,5 +39,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: docker pull ghcr.io/galoisinc/mir-json:2
-      - run: docker run  -v $PWD:/work -w /work  ghcr.io/galoisinc/mir-json:2 -c "cargo crux-test --lib -- -s z3"
+      #- run: docker pull ghcr.io/galoisinc/mir-json:2
+      #- run: docker run  -v $PWD:/work -w /work  ghcr.io/galoisinc/mir-json:2 -c "cargo crux-test --lib -- -s z3"
+      - name: Run ubuntu from dockerhub
+        uses: tj-actions/docker-run@v2
+        with:
+          image: ghcr.io/galoisinc/mir-json:2
+          name: mir-json
+          args: |
+            cargo crux-test --lib -- -s z3
