@@ -565,7 +565,7 @@ mod crux_test {
 
     // Tests to establish the correctness of conversions between Bv256 and Scalar52.  We rely on
     // the conversion functions in the main `add_correct_symbolic` test.
-    #[crux_test]
+    #[crux::test]
     fn scalar_to_bv256_correct() {
         let a = symbolic_scalar("a");
         let direct_bytes = a.to_bytes();
@@ -574,7 +574,7 @@ mod crux_test {
             "mismatch:\n  {:?}\n  {:?}", direct_bytes, bv256_bytes);
     }
 
-    #[crux_test]
+    #[crux::test]
     fn bv256_to_scalar_correct() {
         let b = Bv256::symbolic("b");
         crucible_assume!(b < scalar_to_bv256(constants::L));
@@ -584,7 +584,7 @@ mod crux_test {
             "mismatch:\n  {:?}\n  {:?}", direct, via_bytes);
     }
 
-    #[crux_test]
+    #[crux::test]
     fn scalar_to_from_bv256() {
         let a = symbolic_scalar("a");
         let a_big = scalar_to_bv256(a);
@@ -597,7 +597,7 @@ mod crux_test {
 
     /// Test correctness of `Scalar52::add`, by comparison to `crux-mir`'s built-in 256-bit integer
     /// arithmetic.
-    #[crux_test]
+    #[crux::test]
     fn add_correct_symbolic() {
         let a = symbolic_scalar("a");
         let b = symbolic_scalar("b");
@@ -613,7 +613,7 @@ mod crux_test {
 
     /// Test correctness of `Scalar52::sub`, by comparison to `crux-mir`'s built-in 256-bit integer
     /// arithmetic.
-    #[crux_test]
+    #[crux::test]
     fn sub_correct_symbolic() {
         let a = symbolic_scalar("a");
         let b = symbolic_scalar("b");
