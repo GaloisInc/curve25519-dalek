@@ -46,6 +46,6 @@ jobs:
         with:
           image: ghcr.io/galoisinc/mir-json:2
           name: mir-json
-          options: -v $PWD:/work -w /work
+          options: --mount type=bind,src=$PWD,dst=/work -w /work
           args: |
-            -c "pwd; ls -l"
+            -c "pwd; ls -l; cargo --version; cargo crux-test --lib -- -s z3"
