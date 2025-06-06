@@ -1,0 +1,42 @@
+# Inspired by worfklows in https://github.com/dalek-cryptography/curve25519-dalek/
+name: CI
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  doc:
+      name: Check docs
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+          with:
+            toolchain: stable
+        - run: cargo doc
+
+  build:
+      name: Build the code
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+          with:
+            toolchain: stable
+        - run: cargo build
+
+  test:
+      name: Run tests
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+          with:
+            toolchain: stable
+        - run: cargo test
