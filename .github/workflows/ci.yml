@@ -38,6 +38,15 @@ jobs:
     name: Run crux tests and proofs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - run: docker pull ghcr.io/galoisinc/mir-json:2
-      - run: docker run  -v $PWD:/work -w /work ghcr.io/galoisinc/mir-json:2 cargo crux-test --lib -- -s z3
+#      - uses: actions/checkout@v3
+#      - run: docker pull ghcr.io/galoisinc/mir-json:2
+#      - run: docker run  -v $PWD:/work -w /work ghcr.io/galoisinc/mir-json:2 cargo crux-test --lib -- -s z3
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Run the build process with Docker
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ghcr.io/galoisinc/mir-json:2
+          options: -v ${{ github.workspace }}:/data
+          run: |
+              cargo crux-test --lib -- -s z3
