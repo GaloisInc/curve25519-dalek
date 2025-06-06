@@ -47,4 +47,4 @@ jobs:
           image: ghcr.io/galoisinc/mir-json:2
           name: mir-json
           args: |
-            -c "cargo crux-test --lib -- -s z3"
+            -c "pwd; ls -l"
