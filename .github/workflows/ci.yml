@@ -36,17 +36,27 @@ jobs:
 
   prove:
     name: Run crux tests and proofs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      #- run: docker pull ghcr.io/galoisinc/mir-json:2
-      #- run: docker run  -v $PWD:/work -w /work  ghcr.io/galoisinc/mir-json:2 -c "cargo crux-test --lib -- -s z3"
-      - run: sudo chown 1000:1000 -R .
-      - name: Run ubuntu from dockerhub
-        uses: tj-actions/docker-run@v2
-        with:
-          image: ghcr.io/galoisinc/mir-json:2
-          name: mir-json
-          options: --mount type=bind,src=$PWD,dst=/work -w /work
-          args: |
-            -c "pwd; ls -l; cargo --version; cargo crux-test --lib -- -s z3"
+      - name: Get latest mir-json
+        run: |
+          docker pull ghcr.io/galoisinc/mir-json:2
+          docker cp ghcr.io/galoisinc/mir-json:2:/home/mir-json/ mir-json
+          docker cp ghcr.io/galoisinc/mir-json:2:/mir-json/rlibs mir-json/rlibs
+      - name: Get stable crux-mir
+        run: |
+          wget https://github.com/GaloisInc/crucible/releases/download/crux-v0.10/crux-mir-0.10-ubuntu-22.04-X64.tar.gz
+          tar -xvf crux-mir-0.10-ubuntu-22.04-X64.tar.gz
+      - name: Set env
+        run: |
+          echo "$PWD/crux-mir-0.10-ubuntu-22.04-X64/bin" >> $GITHUB_PATH
+          echo "$PWD/mir-json/.cargo" >> $GITHUB_PATH
+          echo "$PWD/mir-json/.rustup" >> $GITHUB_PATH
+          echo "CRUX_RUST_LIBRARY_PATH=$PWD/mir-json/rlibs" >> $GITHUB_ENV
+      - name: Check env
+        run: |
+          echo $GITHUB_ENV
+          echo $GITHUB_PATH
+      - name: Prove
+        run: cargo crux-test --lib -- -s z3
