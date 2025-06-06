@@ -3,9 +3,7 @@ name: CI
 
 on:
   push:
-    branches: [ '**' ]
   pull_request:
-    branches: [ '**' ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -16,9 +14,8 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
-        - uses: dtolnay/rust-toolchain@stable
-          with:
-            toolchain: stable
+        - uses: actions/checkout@v3
+        - run: rustup default stable
         - run: cargo doc
 
   build:
@@ -26,9 +23,7 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
-        - uses: dtolnay/rust-toolchain@stable
-          with:
-            toolchain: stable
+        - run: rustup default stable
         - run: cargo build
 
   test:
@@ -36,7 +31,5 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
-        - uses: dtolnay/rust-toolchain@stable
-          with:
-            toolchain: stable
+        - run: rustup default stable
         - run: cargo test
