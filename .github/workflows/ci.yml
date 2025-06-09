@@ -44,6 +44,8 @@ jobs:
           wget https://github.com/Z3Prover/z3/releases/download/z3-4.15.0/z3-4.15.0-x64-glibc-2.39.zip
           unzip z3-4.15.0-x64-glibc-2.39.zip
           echo "${PWD}/z3-4.15.0-x64-glibc-2.39/bin" >> $GITHUB_PATH
+      - name: Test z3
+        run: z3 --version
 
       - name: Get the URL for the latest mir-json build
         id: mir-json-build
