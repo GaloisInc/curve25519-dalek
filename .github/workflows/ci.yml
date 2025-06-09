@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install z3
-        run: apt-get install -y z3-solver
+        run: sudo apt-get update && sudo apt-get install -y z3-solver
         # NOTE: the following does not run on Ubuntu 22.04
         # run: |
         #   wget https://github.com/Z3Prover/z3/releases/download/z3-4.15.0/z3-4.15.0-x64-glibc-2.39.zip
