@@ -40,4 +40,4 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check proofs
         run: |
-          docker run -v $PWD:/work -w /work ghcr.io/galoisinc/crux-mir:nightly --lib -- -s z3
+          sudo docker run -v $PWD:/work -w /work ghcr.io/galoisinc/crux-mir:nightly --lib -- -s z3
