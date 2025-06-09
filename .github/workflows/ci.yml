@@ -35,7 +35,7 @@ jobs:
 
   prove:
     name: Run crux tests and proofs
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       # NOTE: ideally we would be able to run docker like this, but the user in the docker image
