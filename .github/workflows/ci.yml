@@ -13,8 +13,7 @@ jobs:
     name: Check docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: rustup default stable
       - run: cargo doc
 
@@ -22,63 +21,23 @@ jobs:
     name: Build the code
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: rustup default stable
-      - run: cargo build
+      - run: cargo build --all-targets
 
   test:
     name: Run tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: rustup default stable
       - run: cargo test
 
   prove:
     name: Run crux tests and proofs
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Install z3
-        # NOTE: the following does not run on Ubuntu 22.04
+      - uses: actions/checkout@v4
+      - name: Check proofs
         run: |
-          wget https://github.com/Z3Prover/z3/releases/download/z3-4.15.0/z3-4.15.0-x64-glibc-2.39.zip
-          unzip z3-4.15.0-x64-glibc-2.39.zip
-          echo "${PWD}/z3-4.15.0-x64-glibc-2.39/bin" >> $GITHUB_PATH
-      - name: Test z3
-        run: z3 --version
-
-      - name: Get the URL for the latest mir-json build
-        id: mir-json-build
-        run: |
-          echo "DOWNLOAD_URL=$(curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.CRUX_ACCESS_TOKEN }}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/galoisinc/mir-json/actions/artifacts | jq -r '.artifacts' | jq -c '[ .[] | select ( .name | contains("ubuntu") ) ][0].archive_download_url')" >> $GITHUB_OUTPUT
-
-      - name: Download the latest mir-json build
-        run: |
-          echo "Downloading from ${{ steps.mir-json-build.outputs.DOWNLOAD_URL }}"
-          curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.CRUX_ACCESS_TOKEN }}" -H "X-GitHub-Api-Version: 2022-11-28" --output mir-json.zip ${{ steps.mir-json-build.outputs.DOWNLOAD_URL }}
-          unzip mir-json.zip
-          mkdir mir-json-latest
-          tar -xf mir-json*.tar.gz --strip-components=1 -C mir-json-latest
-          ls -l mir-json-latest
-          echo "${PWD}/mir-json-latest/bin" >> $GITHUB_PATH
-          echo "CRUX_RUST_LIBRARY_PATH=${PWD}/mir-json-latest/rlibs" >> "$GITHUB_ENV"
-
-      - name: Get the URL for the latest Crux-mir build
-        id: crux-mir-build
-        run: |
-          echo "DOWNLOAD_URL=$(curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.CRUX_ACCESS_TOKEN }}" -H "X-GitHub-Api-Version: 2022-11-28" https://api.github.com/repos/galoisinc/crucible/actions/artifacts | jq -r '.artifacts' | jq -c '[ .[] | select ( .name | contains("ubuntu") ) ][0].archive_download_url')" >> $GITHUB_OUTPUT
-
-
-      - name: Download the latest crux-mir build
-        run: |
-          curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ secrets.CRUX_ACCESS_TOKEN }}" -H "X-GitHub-Api-Version: 2022-11-28" --output crux-mir.zip ${{ steps.crux-mir-build.outputs.DOWNLOAD_URL }}
-          unzip crux-mir.zip
-          mkdir crux-mir-latest
-          tar -xf crux-mir*.tar.gz --strip-components=1 -C crux-mir-latest
-          ls -l crux-mir-latest
-          echo "${PWD}/crux-mir-latest/bin" >> $GITHUB_PATH
-
-      - name: Run proofs
-        run: |
-          cargo crux-test --lib -- -s z3
+          docker run -v $PWD:/work -w /work ghcr.io/galoisinc/crux-mir:nightly --lib -- -s z3
