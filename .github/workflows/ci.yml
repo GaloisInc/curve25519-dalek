@@ -33,19 +33,30 @@ jobs:
       - run: rustup default stable
       - run: cargo test
 
+  # NOTE: we can use crux-mir container to simplify the CI action,
+  # however the container currently (6/2025) uses an older version of Z3 (v4.8.14)
+  # that is significantly slower than the bleeding edge one, which is manually installed
+  # in the action below (v 4.15). The slowdown is 50% which is significant. 
+  prove-in-container:
+    # Always skip this job, until the z3 version is updated in the docker container
+    if: false
+    name: Run crux tests and proofs
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/galoisinc/crux-mir:nightly
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+      - run: apt-get update && apt-get install z3
+      - run: rustup default stable
+      - run: z3 --version
+      - run: cargo crux-test --lib -- -s z3
+
   prove:
     name: Run crux tests and proofs
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      # NOTE: ideally we would be able to run docker like this, but the user in the docker image
-      # is `crux-mir`, and that is explicitly mentioned as *not supported* on github hosted runners, 
-      # see https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners
-      # for details
-      #
-      # - name: Check proofs
-      #   run: |
-      #     docker run -v $PWD:/work -w /work ghcr.io/galoisinc/crux-mir:nightly --lib -- -s z3
 
       - name: Install z3
         # NOTE: the following does not run on Ubuntu 22.04
