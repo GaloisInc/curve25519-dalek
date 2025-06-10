@@ -47,7 +47,11 @@ jobs:
       options: --user root
     steps:
       - uses: actions/checkout@v4
-      - run: apt-get update && apt-get install z3
+      - run: |
+          apt-get update && apt-get install -y wget unzip
+          wget https://github.com/Z3Prover/z3/releases/download/z3-4.15.0/z3-4.15.0-arm64-glibc-2.34.zip
+          unzip z3-4.15.0-arm64-glibc-2.34.zip
+          mv z3-4.15.0-arm64-glibc-2.34/bin/z3 /usr/local/bin
       - run: rustup default stable
       - run: z3 --version
       - run: cargo crux-test --lib -- -s z3
